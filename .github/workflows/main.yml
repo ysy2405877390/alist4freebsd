@@ -13,7 +13,7 @@ jobs:
       with:
         # Install some tools before CI runs
         prepare: |
-          pkg install -y curl wget bash gcc go nodejs git
+          pkg install -y curl wget bash gcc go node git
           
         # The CI command to run
         run: |
