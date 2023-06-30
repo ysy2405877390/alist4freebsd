@@ -1,0 +1,51 @@
+name: Build for FreeBSD
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-12
+    env:
+      VERSION: ${{vars.VERSION}}
+    steps:
+    - uses: actions/checkout@v3
+    - name: FreeBSD-vm
+      uses: vmactions/freebsd-vm@v0.3.1
+      with:
+        # Install some tools before CI runs
+        prepare: |
+          pkg install -y curl wget bash gcc go nodejs git
+          
+        # The CI command to run
+        run: |
+          wget https://github.com/alist-org/alist-web/releases/download/$VERSION/dist.tar.gz
+          tar -xzvf dist.tar.gz
+          rm -Rf public/dist
+          mv dist public/dist
+          appName="alist"
+          builtAt="$(date +'%F %T %z')"
+          goVersion=$(go version | sed 's/go version //')
+          gitAuthor=$(git show -s --format='format:%aN <%ae>' HEAD)
+          gitCommit=$(git log --pretty=format:"%h" -1)
+          version=$(git describe --long --tags --dirty --always)
+          webVersion=$(wget -qO- -t1 -T2 "https://api.github.com/repos/alist-org/alist-web/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+          ldflags="\
+          -w -s \
+          -X 'github.com/alist-org/alist/v3/internal/conf.BuiltAt=$builtAt' \
+          -X 'github.com/alist-org/alist/v3/internal/conf.GoVersion=$goVersion' \
+          -X 'github.com/alist-org/alist/v3/internal/conf.GitAuthor=$gitAuthor' \
+          -X 'github.com/alist-org/alist/v3/internal/conf.GitCommit=$gitCommit' \
+          -X 'github.com/alist-org/alist/v3/internal/conf.Version=$version' \
+          -X 'github.com/alist-org/alist/v3/internal/conf.WebVersion=$webVersion' \
+          "
+          go build -ldflags="$ldflags" .
+
+        # Use sh instead of the default shell: csh
+        usesh: true
+        envs: 'VERSION'
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # 设置压缩文件的名称，在控制台会得到app-debug.zip文件的下载链接
+        # 下载后解压缩，里面直接可以看到app-debug.apk，没有其他东西
+        name: binary
+        path: alist
