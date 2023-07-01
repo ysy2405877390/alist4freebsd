@@ -21,6 +21,7 @@ jobs:
           tar -xzvf dist.tar.gz
           rm -Rf public/dist
           mv dist public/dist
+          git config --global --add safe.directory /Users/runner/work/alist4freebsd/alist4freebsd
           appName="alist"
           builtAt="$(date +'%F %T %z')"
           goVersion=$(go version | sed 's/go version //')
