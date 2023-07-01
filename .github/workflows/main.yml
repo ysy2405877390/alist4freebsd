@@ -37,7 +37,7 @@ jobs:
           -X 'github.com/alist-org/alist/v3/internal/conf.Version=$version' \
           -X 'github.com/alist-org/alist/v3/internal/conf.WebVersion=$webVersion' \
           "
-          go build -ldflags="$ldflags" .
+          go build -buildvcs=false -ldflags="$ldflags" .
 
         # Use sh instead of the default shell: csh
         usesh: true
